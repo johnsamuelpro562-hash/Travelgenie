@@ -46,6 +46,7 @@ export default function App() {
     { id: '1', type: 'user', text: 'Find me a flight to\nNairobi next Friday.' },
     { id: '2', type: 'flight', data: { from: 'LOS', to: 'NBO', date: 'Friday', depart: '08:15', arrive: '14:30', luggage: true } }
   ]);
+  const [recording, setRecording] = useState<any>(null);
 
   const handleSend = () => {
     if (inputText.trim() === '') return;
@@ -61,6 +62,31 @@ export default function App() {
     }, 100);
     return () => clearTimeout(t);
   }, [messages]);
+
+  // Load messages from Supabase on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data, error } = await supabase.from('messages').select('*').order('created_at', { ascending: true });
+        if (error) {
+          console.warn('Failed to load messages', error);
+          return;
+        }
+
+        if (data) {
+          const mapped = data.map((r: any) => {
+            if (r.payload && r.payload.text) return { id: r.id, type: 'user', text: r.payload.text };
+            if (r.payload && r.payload.audio_url) return { id: r.id, type: 'audio', audio_url: r.payload.audio_url };
+            if (r.payload && r.payload.flight) return { id: r.id, type: 'flight', data: r.payload.flight };
+            return { id: r.id, type: 'system', text: JSON.stringify(r.payload) };
+          });
+          setMessages(mapped);
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+    })();
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: DESIGN.colors.background }}>
