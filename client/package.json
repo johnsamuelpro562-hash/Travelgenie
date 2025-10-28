@@ -11,6 +11,8 @@
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.76.1",
+    "airports": "^1.0.0",
+    "chrono-node": "^2.9.0",
     "clsx": "^2.1.1",
     "expo": "~54.0.20",
     "expo-av": "^16.0.7",
@@ -19,6 +21,7 @@
     "nativewind": "^4.2.1",
     "react": "19.1.0",
     "react-native": "0.81.5",
+    "react-native-voice": "^0.3.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-react-native": "^1.7.10"
   },
