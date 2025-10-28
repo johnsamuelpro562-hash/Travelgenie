@@ -53,7 +53,60 @@ export default function App() {
     const newMessage = { id: Date.now().toString(), type: 'user', text: inputText.trim() };
     setMessages((m) => [...m, newMessage]);
     setInputText('');
-    // scroll will happen in useEffect
+    // persist to Supabase
+    (async () => {
+      try {
+        await supabase.from('messages').insert([{ payload: { text: newMessage.text }, channel: 'app', status: 'sent' }]);
+      } catch (e) {
+        console.warn('Failed to persist message', e);
+      }
+    })();
+  };
+
+  // Voice recording helpers (expo-av)
+  const startRecording = async () => {
+    try {
+      const permission = await Audio.requestPermissionsAsync();
+      if (!permission.granted) return;
+
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const rec = new Audio.Recording();
+      await rec.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      await rec.startAsync();
+      setRecording(rec);
+    } catch (e) {
+      console.warn('Failed to start recording', e);
+    }
+  };
+
+  const stopRecording = async () => {
+    try {
+      if (!recording) return;
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      setRecording(null);
+
+      if (!uri) return;
+
+      // upload to Supabase Storage (bucket: recordings). Create this bucket in your Supabase UI.
+      const resp = await fetch(uri);
+      const blob = await resp.blob();
+      const filename = `recordings/${Date.now()}.m4a`;
+      const { error: uploadError } = await supabase.storage.from('recordings').upload(filename, blob, { contentType: 'audio/m4a' });
+      if (uploadError) {
+        console.warn('Upload error', uploadError);
+        return;
+      }
+
+      const { data: publicData } = supabase.storage.from('recordings').getPublicUrl(filename);
+      const publicUrl = publicData.publicUrl;
+
+      // persist an audio message row
+      await supabase.from('messages').insert([{ payload: { audio_url: publicUrl }, channel: 'audio', status: 'uploaded' }]);
+      setMessages((m) => [...m, { id: Date.now().toString(), type: 'audio', audio_url: publicUrl }]);
+    } catch (e) {
+      console.warn('Failed to stop recording', e);
+    }
   };
 
   useEffect(() => {
@@ -251,8 +304,11 @@ export default function App() {
           accessibilityLabel="Record voice message"
           accessibilityHint="Record a voice message to send to the assistant"
           hitSlop={{ top: 10, left: 10, right: 10, bottom: 10 }}
+          onPress={() => {
+            if (recording) stopRecording(); else startRecording();
+          }}
         >
-          <Text style={{ fontSize: 20 }}>🎤</Text>
+          <Text style={{ fontSize: 20 }}>{recording ? '⏸️' : '🎤'}</Text>
         </TouchableOpacity>
 
         {/* Send Button */}

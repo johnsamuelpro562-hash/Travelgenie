@@ -1,4 +1,5 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+// @ts-ignore
 import { NextRequest, NextResponse } from 'next/server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
