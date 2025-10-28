@@ -26,5 +26,10 @@
     "web": {
       "favicon": "./assets/favicon.png"
     }
+    ,
+    "extra": {
+      "NEXT_PUBLIC_SUPABASE_URL": "https://qusumgzzwcrgmodlbtyg.supabase.co",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1c3VtZ3p6d2NyZ21vZGxidHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2NDQ1NDQsImV4cCI6MjA3NzIyMDU0NH0.XTUasIExQMnlCCKDVbIpus_XHx3PT3HYhl6Qa7uxuiM"
+    }
   }
 }

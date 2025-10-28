@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.76.1",
     "clsx": "^2.1.1",
     "expo": "~54.0.20",
     "expo-status-bar": "~3.0.8",
