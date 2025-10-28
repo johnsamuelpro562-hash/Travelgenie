@@ -1,4 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Audio } from 'expo-av';
+import { supabase } from './utils/supabase/expo/client';
 import { 
   View, 
   Text, 
@@ -6,6 +8,7 @@ import {
   KeyboardAvoidingView, 
   Platform,
   SafeAreaView,
+  TextInput,
   Dimensions,
   TouchableOpacity
 } from 'react-native';
@@ -39,10 +42,25 @@ export default function App() {
   const [inputText, setInputText] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
 
+  const [messages, setMessages] = useState<Array<any>>([
+    { id: '1', type: 'user', text: 'Find me a flight to\nNairobi next Friday.' },
+    { id: '2', type: 'flight', data: { from: 'LOS', to: 'NBO', date: 'Friday', depart: '08:15', arrive: '14:30', luggage: true } }
+  ]);
+
   const handleSend = () => {
     if (inputText.trim() === '') return;
+    const newMessage = { id: Date.now().toString(), type: 'user', text: inputText.trim() };
+    setMessages((m) => [...m, newMessage]);
     setInputText('');
+    // scroll will happen in useEffect
   };
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+    return () => clearTimeout(t);
+  }, [messages]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: DESIGN.colors.background }}>
@@ -87,139 +105,70 @@ export default function App() {
       </View>
 
       {/* Chat Content */}
-      <ScrollView 
+      <ScrollView
         ref={scrollViewRef}
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* User Message Bubble */}
-        <View style={{
-          alignSelf: 'flex-end',
-          backgroundColor: DESIGN.colors.userBubble,
-          borderRadius: 18,
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          maxWidth: screenWidth - 80,
-          marginBottom: 16,
-          shadowColor: '#00000010',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.1,
-          shadowRadius: 2,
-          elevation: 2
-        }}>
-          <Text style={{
-            fontSize: 16,
-            fontWeight: '400',
-            lineHeight: 20,
-            color: DESIGN.colors.userBubbleText
-          }}>
-            Find me a flight to{"\n"}Nairobi next Friday.
-          </Text>
-        </View>
-
-        {/* Flight Details Card */}
-        <View style={{
-          width: screenWidth - 40,
-          backgroundColor: DESIGN.colors.cardBg,
-          borderRadius: 12,
-          padding: 16,
-          marginBottom: 20,
-          shadowColor: DESIGN.colors.cardShadow,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.125,
-          shadowRadius: 6,
-          elevation: 4
-        }}>
-          {/* Route Row - LOS · NBO */}
-          <View style={{ 
-            flexDirection: 'row', 
-            alignItems: 'center', 
-            marginBottom: 16 
-          }}>
-            <Text style={{
-              fontSize: 22,
-              fontWeight: '700',
-              lineHeight: 26,
-              color: DESIGN.colors.primaryText
+        {messages.map((m) => (
+          m.type === 'user' ? (
+            <View key={m.id} style={{
+              alignSelf: 'flex-end',
+              backgroundColor: DESIGN.colors.userBubble,
+              borderRadius: 18,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              maxWidth: screenWidth - 80,
+              marginBottom: 16,
+              shadowColor: '#00000010',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.1,
+              shadowRadius: 2,
+              elevation: 2
             }}>
-              LOS
-            </Text>
-            
-            {/* Plane and connecting line */}
-            <View style={{ 
-              flexDirection: 'row', 
-              alignItems: 'center', 
-              marginHorizontal: 12 
-            }}>
-              <View style={{ 
-                width: 40, 
-                height: 1, 
-                backgroundColor: DESIGN.colors.mutedText,
-                marginHorizontal: 8 
-              }} />
-              <Text style={{ fontSize: 20, color: DESIGN.colors.mutedText }}>✈️</Text>
-              <View style={{ 
-                width: 40, 
-                height: 1, 
-                backgroundColor: DESIGN.colors.mutedText,
-                marginHorizontal: 8 
-              }} />
+              <Text style={{
+                fontSize: 16,
+                fontWeight: '400',
+                lineHeight: 20,
+                color: DESIGN.colors.userBubbleText
+              }}>{m.text}</Text>
             </View>
-            
-            <Text style={{
-              fontSize: 22,
-              fontWeight: '700',
-              lineHeight: 26,
-              color: DESIGN.colors.primaryText
+          ) : (
+            <View key={m.id} style={{
+              width: screenWidth - 40,
+              backgroundColor: DESIGN.colors.cardBg,
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 20,
+              shadowColor: DESIGN.colors.cardShadow,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.125,
+              shadowRadius: 6,
+              elevation: 4
             }}>
-              NBO
-            </Text>
-          </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                <Text style={{ fontSize: 22, fontWeight: '700', lineHeight: 26, color: DESIGN.colors.primaryText }}>{m.data.from}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 12 }}>
+                  <View style={{ width: 40, height: 1, backgroundColor: DESIGN.colors.mutedText, marginHorizontal: 8 }} />
+                  <Text style={{ fontSize: 20, color: DESIGN.colors.mutedText }}>✈️</Text>
+                  <View style={{ width: 40, height: 1, backgroundColor: DESIGN.colors.mutedText, marginHorizontal: 8 }} />
+                </View>
+                <Text style={{ fontSize: 22, fontWeight: '700', lineHeight: 26, color: DESIGN.colors.primaryText }}>{m.data.to}</Text>
+              </View>
+              <Text style={{ fontSize: 16, fontWeight: '400', lineHeight: 20, color: DESIGN.colors.secondaryText, marginBottom: 16 }}>Date: {m.data.date}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                <Text style={{ fontSize: 20, color: DESIGN.colors.mutedText, marginRight: 8 }}>🕒</Text>
+                <Text style={{ fontSize: 16, fontWeight: '500', lineHeight: 20, color: DESIGN.colors.primaryText }}>{m.data.depart} – {m.data.arrive}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ fontSize: 20, color: DESIGN.colors.mutedText, marginRight: 8 }}>🧳</Text>
+                <Text style={{ fontSize: 14, fontWeight: '400', lineHeight: 18, color: DESIGN.colors.secondaryText }}>{m.data.luggage ? 'Includes luggage' : 'No luggage'}</Text>
+              </View>
+            </View>
+          )
+        ))}
 
-          {/* Date */}
-          <Text style={{
-            fontSize: 16,
-            fontWeight: '400',
-            lineHeight: 20,
-            color: DESIGN.colors.secondaryText,
-            marginBottom: 16
-          }}>
-            Date: Friday
-          </Text>
-
-          {/* Time Row */}
-          <View style={{ 
-            flexDirection: 'row', 
-            alignItems: 'center', 
-            marginBottom: 16 
-          }}>
-            <Text style={{ fontSize: 20, color: DESIGN.colors.mutedText, marginRight: 8 }}>🕒</Text>
-            <Text style={{
-              fontSize: 16,
-              fontWeight: '500',
-              lineHeight: 20,
-              color: DESIGN.colors.primaryText
-            }}>
-              08:15 – 14:30
-            </Text>
-          </View>
-
-          {/* Luggage Row */}
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontSize: 20, color: DESIGN.colors.mutedText, marginRight: 8 }}>🧳</Text>
-            <Text style={{
-              fontSize: 14,
-              fontWeight: '400',
-              lineHeight: 18,
-              color: DESIGN.colors.secondaryText
-            }}>
-              Includes luggage
-            </Text>
-          </View>
-        </View>
-
-        {/* Spacer for input area */}
         <View style={{ height: 80 }} />
       </ScrollView>
 
@@ -243,37 +192,45 @@ export default function App() {
           borderWidth: 1,
           borderColor: DESIGN.colors.inputBorder,
           paddingHorizontal: 20,
-          paddingVertical: 14,
+          paddingVertical: 6,
           marginRight: 12
         }}>
-          <Text style={{
-            fontSize: 15,
-            fontWeight: '400',
-            fontStyle: 'italic',
-            lineHeight: 18,
-            color: DESIGN.colors.placeholderText
-          }}>
-            Tell your genie your travel wish...
-          </Text>
+          <TextInput
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Tell your genie your travel wish..."
+            placeholderTextColor={DESIGN.colors.placeholderText}
+            style={{ fontSize: 15, fontWeight: '400', lineHeight: 18, color: DESIGN.colors.primaryText }}
+            returnKeyType="send"
+            onSubmitEditing={handleSend}
+            accessible
+            accessibilityLabel="Message input"
+          />
         </View>
 
         {/* Microphone Button */}
-        <TouchableOpacity style={{
-          width: 44,
-          height: 44,
-          borderRadius: 22,
-          backgroundColor: DESIGN.colors.inputBg,
-          borderWidth: 1,
-          borderColor: DESIGN.colors.inputBorder,
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginRight: 8
-        }}>
+        <TouchableOpacity
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            backgroundColor: DESIGN.colors.inputBg,
+            borderWidth: 1,
+            borderColor: DESIGN.colors.inputBorder,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginRight: 8
+          }}
+          accessible
+          accessibilityLabel="Record voice message"
+          accessibilityHint="Record a voice message to send to the assistant"
+          hitSlop={{ top: 10, left: 10, right: 10, bottom: 10 }}
+        >
           <Text style={{ fontSize: 20 }}>🎤</Text>
         </TouchableOpacity>
 
         {/* Send Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={{
             width: 44,
             height: 44,
@@ -283,6 +240,10 @@ export default function App() {
             alignItems: 'center'
           }}
           onPress={handleSend}
+          accessible
+          accessibilityLabel="Send message"
+          accessibilityHint="Send the typed message to Travel Genie"
+          hitSlop={{ top: 10, left: 10, right: 10, bottom: 10 }}
         >
           <Text style={{ fontSize: 20 }}>📤</Text>
         </TouchableOpacity>
